@@ -17,7 +17,7 @@ Or add it directly to your `Package.swift` dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/jeneiv", from: "1.0.0")
+    .package(url: "https://github.com/jeneiv/RequestR.git", from: "1.0.0")
 ]
 ```
 
@@ -86,9 +86,7 @@ var tasks: [any RequestModifierTask]? {
 
 ## Advanced Usage
 
-### 1. Sending a JSON Body
-
-You can use the built-in `RequestJSONEncodableModifierTask` to encode any `Encodable` type as the HTTP body and automatically set the `Content-Type` header.
+Below is a more realistic example of a single `RequestDescriptor` enum handling multiple endpoints and request types:
 
 ```swift
 import RequestR
@@ -99,99 +97,62 @@ struct User: Encodable {
 }
 
 enum MyAPI: RequestDescriptor {
+    case getUser(id: String)
     case createUser(User)
-    
+    case searchUsers(query: String)
+    case uploadFile(Data)
+    case updateUser(id: String, user: User)
+
     var baseURL: URL { URL(string: "https://api.example.com")! }
-    var path: String { "/users" }
-    var method: Method { .post }
-    var headers: [String: String]? { nil }
-    var tasks: [any RequestModifierTask]? {
+
+    var path: String {
         switch self {
-        case .createUser(let user):
-            return [RequestJSONEncodableModifierTask(encodable: user)]
+        case .getUser(let id):
+            return "/users/\(id)"
+        case .createUser:
+            return "/users"
+        case .searchUsers:
+            return "/users/search"
+        case .uploadFile:
+            return "/files/upload"
+        case .updateUser(let id, _):
+            return "/users/\(id)"
         }
     }
-}
 
-// Usage:
-let newUser = User(name: "Alice", age: 30)
-let request = try MyAPI.createUser(newUser).toURLRequest()
-```
+    var method: Method {
+        switch self {
+        case .getUser, .searchUsers:
+            return .get
+        case .createUser:
+            return .post
+        case .uploadFile:
+            return .post
+        case .updateUser:
+            return .put
+        }
+    }
 
-### 2. Adding Query Parameters
+    var headers: [String: String]? {
+        switch self {
+        case .uploadFile:
+            return ["Content-Type": "application/octet-stream"]
+        default:
+            return nil
+        }
+    }
 
-Use `RequestQueryStringModifierTask` to add query parameters to your request. You can convert a `[String: String]` dictionary to `[URLQueryItem]` using the provided extension.
-
-```swift
-import RequestR
-
-enum MyAPI: RequestDescriptor {
-    case searchUsers(query: String)
-    
-    var baseURL: URL { URL(string: "https://api.example.com")! }
-    var path: String { "/users/search" }
-    var method: Method { .get }
-    var headers: [String: String]? { nil }
     var tasks: [any RequestModifierTask]? {
         switch self {
+        case .getUser:
+            return nil
+        case .createUser(let user):
+            return [RequestJSONEncodableModifierTask(encodable: user)]
         case .searchUsers(let query):
             let params = ["q": query]
             return [RequestQueryStringModifierTask(queryItems: params.toQueryItems())]
-        }
-    }
-}
-
-// Usage:
-let request = try MyAPI.searchUsers(query: "Alice").toURLRequest()
-```
-
-### 3. Sending Raw Data as HTTP Body
-
-If you need to send raw data (e.g., for file uploads), use `RequestHTTPBodyModifierTask`:
-
-```swift
-import RequestR
-
-enum MyAPI: RequestDescriptor {
-    case uploadFile(Data)
-    
-    var baseURL: URL { URL(string: "https://api.example.com")! }
-    var path: String { "/files/upload" }
-    var method: Method { .post }
-    var headers: [String: String]? { ["Content-Type": "application/octet-stream"] }
-    var tasks: [any RequestModifierTask]? {
-        switch self {
         case .uploadFile(let data):
             return [RequestHTTPBodyModifierTask(data: data)]
-        }
-    }
-}
-
-// Usage:
-let fileData = Data(...) // your file data here
-let request = try MyAPI.uploadFile(fileData).toURLRequest()
-```
-
-### 4. Composing Multiple Modifier Tasks
-
-You can combine multiple tasks for more complex requests:
-
-```swift
-import RequestR
-
-enum MyAPI: RequestDescriptor {
-    case updateUser(id: String, user: User)
-    
-    var baseURL: URL { URL(string: "https://api.example.com")! }
-    var path: String {
-        switch self {
-        case .updateUser(let id, _): return "/users/\(id)"
-        }
-    }
-    var method: Method { .put }
-    var headers: [String: String]? { nil }
-    var tasks: [any RequestModifierTask]? {
-        switch self {
         case .updateUser(_, let user):
             let query = ["notify": "true"]
             return [
@@ -201,8 +162,34 @@ enum MyAPI: RequestDescriptor {
         }
     }
 }
+```
 
-// Usage:
+### Usage Examples
+
+#### Get a User
+```swift
+let request = try MyAPI.getUser(id: "123").toURLRequest()
+```
+
+#### Create a User (JSON Body)
+```swift
+let newUser = User(name: "Alice", age: 30)
+let request = try MyAPI.createUser(newUser).toURLRequest()
+```
+
+#### Search Users (Query Parameters)
+```swift
+let request = try MyAPI.searchUsers(query: "Alice").toURLRequest()
+```
+
+#### Upload a File (Raw Data)
+```swift
+let fileData = Data(...) // your file data here
+let request = try MyAPI.uploadFile(fileData).toURLRequest()
+```
+
+#### Update a User (Multiple Modifier Tasks)
+```swift
 let updatedUser = User(name: "Alice", age: 31)
 let request = try MyAPI.updateUser(id: "123", user: updatedUser).toURLRequest()
 ```
