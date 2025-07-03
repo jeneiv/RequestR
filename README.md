@@ -272,3 +272,102 @@ let provider = SessionBasedProvider<MyAPI>(plugins: [LoggingPlugin()])
 Plugins will be called in order for each request.
 
 ---
+
+# RequestRMocking
+A skeleton implementation for mocking responses of URLSession tasks.
+
+## Purpose
+
+**RequestRMocking** provides a flexible way to mock network responses for your tests by subclassing `URLProtocol`. This allows you to simulate different server responses and errors without making real network calls, making your unit tests fast and reliable.
+
+## Installation
+
+Add `RequestRMocking` as a dependency in your test target via Swift Package Manager.  
+Import it in your test files:
+
+```swift
+import RequestRMocking
+```
+
+## Usage
+
+### 1. Subclass `MockURLProtocol`
+
+Create a subclass and override the `mockResponses` property to define the responses for specific URLs:
+
+```swift
+import RequestRMocking
+
+class HelloWorldMockURLProtocol: MockURLProtocol {
+    override class var mockResponses: [String: MockURLProtocolResponse] {
+        [
+            "https://api.example.com/hello": .response(
+                """
+                {"hello": "world"}
+                """.data(using: .utf8)!,
+                HTTPURLResponse(
+                    url: URL(string: "https://api.example.com/hello")!,
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                )!
+            )
+        ]
+    }
+}
+```
+
+You can also simulate errors:
+
+```swift
+class ErrorMockURLProtocol: MockURLProtocol {
+    override class var mockResponses: [String: MockURLProtocolResponse] {
+        [
+            "https://api.example.com/fail": .error(MyCustomError())
+        ]
+    }
+}
+```
+
+### 2. Configure URLSession to Use the Mock
+
+In your tests, set up a `URLSession` with a configuration that uses your mock protocol:
+
+```swift
+let config = URLSessionConfiguration.ephemeral
+config.protocolClasses = [HelloWorldMockURLProtocol.self]
+let session = URLSession(configuration: config)
+```
+
+### 3. Use with `SessionBasedProvider`
+
+Pass the custom session to your provider:
+
+```swift
+let provider = SessionBasedProvider<MyAPI>(session: session)
+let response = try await provider.data(for: .getUser(id: "123"))
+// response.data will be the mocked data
+```
+
+### Example Test (Swift Testing)
+
+```swift
+import Testing
+import RequestR
+import RequestRMocking
+
+@Suite("SessionBasedProvider with Mocking")
+struct SessionBasedProviderMockingTests {
+    @Test("Returns mocked hello world JSON")
+    func testHelloWorldResponse() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [HelloWorldMockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let provider = SessionBasedProvider<MyAPI>(session: session)
+        let response = try await provider.data(for: .getUser(id: "123"))
+        #expect(response.statusCode == 200)
+        #expect(String(data: response.data, encoding: .utf8) == "{\"hello\": \"world\"}")
+    }
+}
+```
+

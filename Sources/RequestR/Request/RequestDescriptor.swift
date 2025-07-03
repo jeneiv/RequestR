@@ -13,7 +13,6 @@ public protocol RequestDescriptor {
     var method: Method { get }
     var tasks: [any RequestModifierTask]? { get }
     var headers: [String: String]? { get }
-    // TODO: Figure out if Mock Handling should go here or to some other place
 }
 
 public extension RequestDescriptor {

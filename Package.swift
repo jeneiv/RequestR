@@ -23,11 +23,15 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "RequestR",
-            path: "Sources"
+            path: "Sources/RequestR"
+        ),
+        .target(
+            name: "RequestRMocking",
+            path: "Sources/RequestRMocking"
         ),
         .testTarget(
             name: "RequestRTests",
-            dependencies: ["RequestR"]
+            dependencies: ["RequestR", "RequestRMocking"]
         ),
     ]
 )

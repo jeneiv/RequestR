@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 @testable import RequestR
+import RequestRMocking
 
 @Suite(
     "Tests of SessionBasedProvider",
@@ -318,51 +319,5 @@ class HelloWorldDictionaryReturningMockURLprotocol: MockURLProtocol {
                 )!
             )
         ]
-    }
-}
-
-// MARK: - Mocking Implementation
-
-class MockURLProtocol: URLProtocol {
-    enum MockURLProtocolResponse {
-        case response(Data, URLResponse)
-        case error(Error)
-    }
-
-    enum MockError: Error {
-        case cannotResolveURL
-    }
-
-    class var mockResponses: [String: MockURLProtocolResponse] {
-        [:]
-    }
-
-    override class func canInit(with request: URLRequest) -> Bool {
-        return true
-    }
-
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-        return request
-    }
-
-    override func startLoading() {
-        guard let url = request.url, let mockResponse = Self.mockResponses[url.absoluteString] else {
-            client?.urlProtocol(self, didFailWithError: MockError.cannotResolveURL)
-            return
-        }
-
-        switch mockResponse {
-        case .response(let data, let response):
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-        case .error(let error):
-            client?.urlProtocol(self, didFailWithError: error)
-        }
-
-        client?.urlProtocolDidFinishLoading(self)
-    }
-
-    override func stopLoading() {
-        // Intentionally left blank
     }
 }
