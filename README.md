@@ -193,3 +193,82 @@ let request = try MyAPI.uploadFile(fileData).toURLRequest()
 let updatedUser = User(name: "Alice", age: 31)
 let request = try MyAPI.updateUser(id: "123", user: updatedUser).toURLRequest()
 ```
+
+## URLSession-based Provider
+
+RequestR includes a flexible, plugin-driven provider for executing requests using `URLSession`.
+
+### Basic Usage
+
+```swift
+import RequestR
+
+let provider = SessionBasedProvider<MyAPI>()
+
+Task {
+    do {
+        let response = try await provider.data(for: .getUser(id: "123"))
+        print("Status: \(response.statusCode)")
+        print("Data: \(response.data)")
+    } catch {
+        print("Request failed: \(error)")
+    }
+}
+```
+
+### The `Response` Type
+
+The provider returns a `Response` object:
+
+```swift
+public struct Response {
+    public let statusCode: Int
+    public let data: Data
+    public let request: URLRequest
+    public let response: HTTPURLResponse
+}
+```
+
+---
+
+## Plugins
+
+Plugins allow you to hook into the request/response lifecycle for logging, analytics, request modification, and more.
+
+### Plugin Protocol
+
+```swift
+public protocol Plugin {
+    func prepare(_ request: URLRequest, descriptor: any RequestDescriptor) -> URLRequest
+    func willSend(_ request: URLRequest, descriptor: any RequestDescriptor)
+    func didReceive(_ response: Response, descriptor: any RequestDescriptor)
+    func process(_ response: Response, descriptor: any RequestDescriptor) -> Response
+}
+```
+
+All methods have default implementations, so you only need to override what you need.
+
+### Example: Logging Plugin
+
+```swift
+struct LoggingPlugin: Plugin {
+    func willSend(_ request: URLRequest, descriptor: any RequestDescriptor) {
+        print("Sending request: \(request)")
+    }
+    func didReceive(_ response: Response, descriptor: any RequestDescriptor) {
+        print("Received response: \(response.statusCode)")
+    }
+}
+```
+
+### Using Plugins
+
+Pass plugins to the provider:
+
+```swift
+let provider = SessionBasedProvider<MyAPI>(plugins: [LoggingPlugin()])
+```
+
+Plugins will be called in order for each request.
+
+---

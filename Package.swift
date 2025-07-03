@@ -5,6 +5,13 @@ import PackageDescription
 
 let package = Package(
     name: "RequestR",
+    platforms: [
+        .iOS(.v15),
+        .macOS(.v12),
+        .tvOS(.v12),
+        .watchOS(.v8),
+        .visionOS(.v1)
+    ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(

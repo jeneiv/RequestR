@@ -10,4 +10,5 @@ import Testing
 extension Tag {
     @Tag static var requestDescriptorTests: Self
     @Tag static var requestModifierTaskTests: Self
+    @Tag static var providerTests: Self
 }
