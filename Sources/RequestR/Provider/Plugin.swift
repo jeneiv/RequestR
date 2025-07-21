@@ -11,7 +11,7 @@ public protocol Plugin {
     /// Is called to alter the request before sending it
     func prepare(_ request: URLRequest, descriptor: any RequestDescriptor) -> URLRequest
 
-    /// Is called just ebfore the request is sent
+    /// Is called just before the request is sent
     func willSend(_ request: URLRequest, descriptor: any RequestDescriptor)
 
     /// Is called after the request has been received, but before `process`
