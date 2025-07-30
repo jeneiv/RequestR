@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum RequestProviderErrorError: Error {
+public enum RequestProviderError: Error {
     case responseTypeMismatch
 }
 
@@ -30,7 +30,7 @@ public struct SessionBasedProvider<Descriptor: RequestDescriptor> {
         plugins.forEach { $0.willSend(urlRequest, descriptor: descriptor) }
         let sessionResponse: (data: Data, response: URLResponse) = try await session.data(for: urlRequest, delegate: delegate)
         guard let httpURLResponse = sessionResponse.response as? HTTPURLResponse else {
-            throw RequestProviderErrorError.responseTypeMismatch
+            throw RequestProviderError.responseTypeMismatch
         }
         var response = Response(
             statusCode: httpURLResponse.statusCode,

@@ -138,7 +138,7 @@ struct SessionBasedProviderTests {
         let descriptor = FakeDescriptor()
         let provider = SessionBasedProvider<FakeDescriptor>(session: session)
         
-        await #expect(throws: RequestProviderErrorError.self, performing: {
+        await #expect(throws: RequestProviderError.self, performing: {
             let _ = try await provider.data(for: descriptor)
         })
     }
