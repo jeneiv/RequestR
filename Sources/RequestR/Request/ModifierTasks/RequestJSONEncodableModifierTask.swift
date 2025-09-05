@@ -11,6 +11,11 @@ public struct RequestJSONEncodableModifierTask: RequestModifierTask {
     public let encodable: Encodable
     public var encoder = JSONEncoder()
 
+    public init(encodable: Encodable, encoder: JSONEncoder = JSONEncoder()) {
+        self.encodable = encodable
+        self.encoder = encoder
+    }
+
     public func apply(on request: URLRequest) throws(RequestModifierTaskError) -> URLRequest {
         var request = request
         do {

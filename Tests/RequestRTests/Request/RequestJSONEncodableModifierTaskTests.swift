@@ -14,6 +14,17 @@ import Testing
     .tags(.requestModifierTaskTests)
 )
 struct RequestJSONEncodableModifierTests {
+    @Test("Testing the constructor")
+    func testInit() {
+        let encodable = ["some string", "some toher string"]
+        let encoder = JSONEncoder()
+
+        let sut = RequestJSONEncodableModifierTask(encodable: encodable, encoder: encoder)
+
+        #expect(sut.encodable as? [String] == encodable)
+        #expect(sut.encoder === encoder)
+    }
+
     @Test("Testing JSONEncodableModifier's constructor with a default encoder")
     func testConstructorWithoutProvidedEncoder() {
         let aCustomJSONEncoder = JSONEncoder()

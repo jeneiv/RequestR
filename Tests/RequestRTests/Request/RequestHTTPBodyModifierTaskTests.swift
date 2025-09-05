@@ -14,6 +14,15 @@ import Testing
     .tags(.requestModifierTaskTests)
 )
 struct RequestHTTPBodyModifierTests {
+    @Test("Testing the constructor")
+    func testInit() {
+        let data = "Hello, World!".data(using: .utf8)!
+        
+        let sut = RequestHTTPBodyModifierTask(data: data)
+        
+        #expect(sut.data == data)
+    }
+
     @Test("Testing if httpBody is added")
     func testHTTPBody() {
         let url = URL(string: "https://example.com")!
