@@ -30,7 +30,7 @@ open class MockURLProtocol: URLProtocol {
     }
 
     public override func startLoading() {
-        guard let url = request.url, let mockResponse = Self.mockResponses[url.absoluteString] else {
+        guard let url = request.url, let strippedURL = url.strippedOfQueryString(), let mockResponse = Self.mockResponses[strippedURL.absoluteString] else {
             client?.urlProtocol(self, didFailWithError: MockError.cannotResolveURL)
             return
         }
@@ -48,5 +48,13 @@ open class MockURLProtocol: URLProtocol {
 
     public override func stopLoading() {
         // Intentionally left blank
+    }
+}
+
+private extension URL {
+    func strippedOfQueryString() -> URL? {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return nil }
+        components.queryItems = nil
+        return components.url
     }
 }
